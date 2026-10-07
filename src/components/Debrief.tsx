@@ -8,11 +8,18 @@ const pass = (ok: boolean) => ({ color: ok ? '#3ecf6e' : '#ff6b6b', fontWeight: 
 export default function Debrief() {
   const engine = useEngine();
   const d = scoreRun(engine);
+  const complianceScore = (d.pov.score + d.stopLoss.score) / 2;
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
   return (
     <div className="exposure">
       <div style={{ display: 'flex', gap: 24, alignItems: 'baseline' }}>
         <h4>Debrief {d.finished ? '(final)' : '(so far)'}</h4>
         <span style={{ fontSize: 22, fontWeight: 800 }}>Grade: {d.grade}</span>
+        <span style={{ fontSize: 13, color: '#8a93a0' }}>
+          Score breakdown — Hedging {pct(d.hedging.score)} (50%) · Comms {pct(d.comms.score)} (20%) ·
+          Limits/Stop-loss {pct(complianceScore)} (20%) · Timing {pct(d.timing.score)} (10%)
+          {' '}→ overall {pct(d.gradeScore)}
+        </span>
         <span>TCM: {fmtUsd(d.tcm)}</span>
         {d.bestDay && <span>Best day: {formatShortDate(d.bestDay.date)} ({fmtUsd(d.bestDay.pnl)})</span>}
         {d.worstDay && <span>Worst day: {formatShortDate(d.worstDay.date)} ({fmtUsd(d.worstDay.pnl)})</span>}

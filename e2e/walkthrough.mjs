@@ -91,19 +91,22 @@ for (let dayIdx = 0; dayIdx < 10 && !finished; dayIdx++) {
   const iso = toIso(gd);
   const dayStart = Date.now();
 
-  // wait until near close: est tick >= 335 (wall ~5.6s at 60x) with clock cross-check;
+  // wait until near close: est tick >= 325 (wall ~5.4s at 60x) with clock cross-check;
   // reply to Trading Manager messages as soon as they arrive (90-tick window)
   for (;;) {
     const el = (Date.now() - dayStart) / 1000;
     const estTick = el * 60;
     const clockMin = await topNewsClockMinutes();
     while ((await managerNewsCount()) > results.replies) await replyToManager();
-    if (estTick >= 335 || clockMin >= 330 || el > 6.4) break;
+    if (estTick >= 325 || clockMin >= 325 || el > 6.4) break;
     await page.waitForTimeout(80);
     const pill = await page.locator('.status-pill').innerText();
     if (pill.trim() === 'Finished') { finished = true; break; }
   }
   if (finished) break;
+  // pause so the hedge executes at a deterministic tick (~325-340, inside the
+  // ideal last-60-min window) instead of racing the day roll at 60x
+  await page.getByRole('button', { name: 'Pause' }).click().catch(() => {});
 
   // day 2 (index 1): open 50-lot JUN POV (sell)
   if (dayIdx === 1 && !junPovDone) {
@@ -140,7 +143,8 @@ for (let dayIdx = 0; dayIdx < 10 && !finished; dayIdx++) {
     log(`${gd}: no pricing row (${reqText})`);
   }
 
-  // wait for day roll (date text changes) or finish
+  // resume and wait for day roll (date text changes) or finish
+  await page.getByTestId('ctl-start').click().catch(() => {});
   for (;;) {
     while ((await managerNewsCount()) > results.replies) await replyToManager();
     const pill = (await page.locator('.status-pill').innerText()).trim();
@@ -160,11 +164,17 @@ await SHOT(page, 'walk-03-debrief.png');
 
 const db = page.locator('.bottom-body');
 const debriefText = await db.innerText();
+log('debrief text:\n' + debriefText);
 const gradeM = debriefText.match(/Grade:\s*([A-F])/i);
 const hedgeM = debriefText.match(/(\d+)% of pricing days hedged/i);
 const commsM = debriefText.match(/(\d+)\/(\d+)/);
 const junM = debriefText.match(/(\d+) lots \(limit 100\)/i);
+const wrongM = debriefText.match(/wrong contract\s*\n?\s*(\d+)/i);
+const breakM = debriefText.match(/Score breakdown — ([^\n]+)/);
+const wrongM2 = debriefText.match(/Days over\/under-hedged in wrong contract\s*(\d+)/i);
 results.debrief = {
+  breakdown: breakM?.[1] ?? null,
+  wrongContractDays: wrongM ? +wrongM[1] : wrongM2 ? +wrongM2[1] : null,
   grade: gradeM?.[1], hedgingPct: hedgeM ? +hedgeM[1] : null,
   comms: commsM ? `${commsM[1]}/${commsM[2]}` : null, maxJun: junM ? +junM[1] : null,
 };
