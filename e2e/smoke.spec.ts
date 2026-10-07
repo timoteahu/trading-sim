@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test('trade → exposure → messenger', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?seed=42');
   await expect(page.getByText('Awaiting Market Open')).toBeVisible();
+  await expect(page.getByTestId('seed-label')).toHaveText('42');
 
   await page.getByTestId('ctl-start').click();
   await expect(page.getByText('Market Open')).toBeVisible();
@@ -32,6 +33,8 @@ test('trade → exposure → messenger', async ({ page }) => {
   // Exposure tab shows +140,000 Brent MAY (long futures vs no fixings yet)
   await page.getByRole('button', { name: 'Exposure', exact: true }).click();
   await expect(page.locator('.exposure')).toContainText('140,000');
+  await expect(page.locator('.exposure')).toContainText('Hedge required');
+  await expect(page.locator('.exposure')).toContainText(/Buy 140 lots|Sell \d+ lots/);
 
   // Messenger: send to Control Room, expect auto-ack
   await page.getByRole('button', { name: 'Messenger', exact: true }).click();

@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import Deals from './Deals';
 import ExposureTab from './Exposure';
 import Charts from './Charts';
 import Messenger from './Messenger';
+import Debrief from './Debrief';
 import { useUi, useEngine, type BottomTab } from '../store';
 
 export const EXPO_CHANNEL = 'sms-exposure';
@@ -10,8 +12,13 @@ export default function BottomPanel() {
   const engine = useEngine();
   const { bottomTab, exposurePopped, set } = useUi();
 
-  const tabs: BottomTab[] = (['Deals', 'Exposure', 'Charts', 'Messenger'] as BottomTab[])
-    .filter((t) => !exposurePopped || (t !== 'Deals' && t !== 'Exposure'));
+  const tabs: BottomTab[] = (['Deals', 'Exposure', 'Charts', 'Messenger', 'Debrief'] as BottomTab[])
+    .filter((t) => (!exposurePopped || (t !== 'Deals' && t !== 'Exposure'))
+      && (t !== 'Debrief' || engine.status === 'finished'));
+
+  useEffect(() => {
+    if (engine.status === 'finished' && bottomTab !== 'Debrief') set({ bottomTab: 'Debrief' });
+  }, [engine.status]);
   const active = tabs.includes(bottomTab) ? bottomTab : tabs[0];
 
   const popOut = () => {
@@ -57,6 +64,7 @@ export default function BottomPanel() {
         {active === 'Exposure' && <ExposureTab />}
         {active === 'Charts' && <Charts />}
         {active === 'Messenger' && <Messenger />}
+        {active === 'Debrief' && <Debrief />}
       </div>
     </div>
   );

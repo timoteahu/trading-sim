@@ -1,43 +1,54 @@
 import { describe, it, expect } from 'vitest';
-import { SimEngine, TICKS_PER_DAY, STOP_LOSS } from '../sim';
+import { SimEngine, STOP_LOSS } from '../sim';
 import { LOT_BBL } from '../instruments';
+import { quietEngine } from './pricing-window.test';
+import type { CargoSpec } from '../types';
+
+const FORTIES: CargoSpec = {
+  grade: 'Forties', side: 'S', volumeBbl: 700_000, diff: -0.10,
+  blDate: '2024-04-05', rule: { kind: 'around', before: 2, after: 2 },
+};
+const EKOFISK_BUY: CargoSpec = {
+  grade: 'Ekofisk', side: 'B', volumeBbl: 500_000, diff: 0.35,
+  blDate: '2024-04-01', rule: { kind: 'after', days: 5 },
+};
 
 describe('pnl', () => {
   it('futures unrealised P&L vs mid', () => {
-    const e = new SimEngine({ seed: 3 });
+    const e = quietEngine(FORTIES, 3);
     e.start();
     e.tick();
     const q = e.quote('BRENT', 'MAY');
     e.executeDeal('BRENT', 'MAY', 'B', 10);
-    const pnl = e.futuresPnl();
-    // long 10 @ ask; unrealised = qty*1000*(mid-avg) = 10*1000*(-halfSpread)
-    expect(pnl).toBeCloseTo(10 * LOT_BBL * (q.mid - q.ask), 4);
+    expect(e.futuresPnl()).toBeCloseTo(10 * LOT_BBL * (q.mid - q.ask), 4);
   });
 
-  it('physical MTM: (fixedPrice - currentMid) * 140,000 per fixed day', () => {
-    const e = new SimEngine({ seed: 3 });
+  it('physical MTM: sold (close - cur) * vol; bought (cur - close) * vol; diff cancels', () => {
+    const e = quietEngine(FORTIES, 3);
+    e.addCargo(EKOFISK_BUY);
     e.start();
-    for (let t = 0; t < TICKS_PER_DAY * 4 + 20; t++) e.tick(); // first fix Thu 4 Apr
-    const f = e.physical.fixings[0];
+    let guard = 0;
+    while (e.dayIndex <= 2 && guard++ < 20_000) e.tick(); // end of Apr 3
     const cur = e.mid('BRENT:MAY');
-    // P_D = fixing-day MAY close = fixedPrice - diff; MTM vs current outright mid
-    expect(e.physicalPnl()).toBeCloseTo(
-      (f.fixedPrice - (cur + e.physical.diff)) * 140_000, 4);
-    // equivalently (close_D - cur) * vol — the -0.10 diff cancels out
-    const closeD = f.fixedPrice - e.physical.diff;
-    expect(e.physicalPnl()).toBeCloseTo((closeD - cur) * 140_000, 4);
+    const sold = e.physicals[0].fixings[0];            // -140k tranche
+    const bought = e.physicals[1].fixings;             // +100k x2 (Apr 2, 3)
+    const soldClose = sold.fixedPrice - e.physicals[0].diff;
+    const expected =
+      (soldClose - cur) * sold.volumeBbl +
+      bought.reduce((a, f) => a + (cur - (f.fixedPrice - e.physicals[1].diff)) * f.volumeBbl, 0);
+    expect(e.physicalPnl()).toBeCloseTo(expected, 4);
   });
 
   it('stop loss triggers at <= -$1,000,000', () => {
-    const e = new SimEngine({ seed: 3 });
+    const e = quietEngine(FORTIES, 3);
     e.start();
     e.tick();
-    // force a large loss: buy then crash the market
     e.executeDeal('BRENT', 'MAY', 'B', 500);
     for (const [id, m] of e.mids) e.mids.set(id, m * 0.9);
     e.tick();
     expect(e.totalPnl()).toBeLessThanOrEqual(STOP_LOSS);
     expect(e.stopLossHit).toBe(true);
+    expect(e.stopLossTick).toBeGreaterThan(0);
     expect(e.news.some((n) => n.headline === 'STOP LOSS BREACHED')).toBe(true);
   });
 });

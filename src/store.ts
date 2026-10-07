@@ -4,7 +4,13 @@ import type { Contract } from './engine/instruments';
 import type { Side } from './engine/types';
 
 export type InstrumentTab = 'Futures' | 'Physical' | 'Swaps' | 'Freight' | 'Storage';
-export type BottomTab = 'Deals' | 'Exposure' | 'Charts' | 'Messenger';
+export type BottomTab = 'Deals' | 'Exposure' | 'Charts' | 'Messenger' | 'Debrief';
+
+function seedFromUrl(): number {
+  const s = new URLSearchParams(window.location.search).get('seed');
+  const n = s ? parseInt(s, 10) : NaN;
+  return Number.isFinite(n) ? n : Math.floor(Math.random() * 1_000_000);
+}
 
 interface Ticket { side: Side; product: string; contract: Contract }
 
@@ -44,7 +50,7 @@ export function useEngine(): SimEngine {
 }
 
 export const useUi = create<UiState>((set) => ({
-  engine: new SimEngine({ seed: 42, user: 'Trader', team: 'Trader' }),
+  engine: new SimEngine({ seed: seedFromUrl(), user: 'Trader', team: 'Trader' }),
   version: 0,
   instrumentTab: 'Futures',
   bottomTab: 'Deals',

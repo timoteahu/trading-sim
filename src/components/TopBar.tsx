@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { TRADING_DAYS, formatGameDate } from '../engine/calendar';
 import { TICKS_PER_DAY } from '../engine/sim';
 import { fmtBbl, fmtUsd } from '../engine/format';
@@ -27,8 +28,21 @@ export function DualGauge({ outer, inner }: { outer: number; inner: number }) {
   );
 }
 
+const BRIEF_TEXT = `Junior Trader — European North Sea crude team.
+
+Your book carries physical North Sea crude cargoes priced against front-month Brent.
+
+Objectives:
+1. Hedge the physical book by close of business each pricing day using front month MAY Brent futures. Carrying outright exposure overnight is a compliance mark.
+2. You may run a point-of-view (POV) position in JUN Brent only, up to 100 lots net. MAY is reserved for hedging.
+3. Manage P&L. If your book loss reaches $1,000,000 the stop loss triggers: flatten all POV positions and inform Control Room via Messenger, then resume.
+
+Unit: 1 lot = 1,000 bbl.
+Simulation: 10 trading days, 6 minutes per day. News and physical deals arrive throughout the day — check the News panel and Messenger, and reply promptly to the Trading Manager.`;
+
 export default function TopBar() {
   const engine = useEngine();
+  const [briefOpen, setBriefOpen] = useState(false);
   const pnl = engine.totalPnl();
   const exposure = engine.totalExposureBbl();
   const totalTicks = TRADING_DAYS.length * TICKS_PER_DAY;
@@ -63,6 +77,21 @@ export default function TopBar() {
         </div>
       )}
       <div className="top-right">
+        <button className="btab" onClick={() => setBriefOpen(true)}
+          style={{ border: '1px solid #333a44', color: '#4f9cf0' }}>Brief</button>
+        {briefOpen && (
+          <div className="ticket-overlay" onClick={() => setBriefOpen(false)}>
+            <div className="ticket" style={{ width: 480 }} onClick={(e) => e.stopPropagation()}>
+              <div className="ticket-head" style={{ background: '#14406e' }}>EXERCISE BRIEF</div>
+              <div className="ticket-body" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                {BRIEF_TEXT}
+                <div className="actions" style={{ marginTop: 12 }}>
+                  <button className="btn-cancel" onClick={() => setBriefOpen(false)}>Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <span className={`status-pill ${engine.status}`}>{STATUS_LABEL[engine.status]}</span>
         <a className="logout-link" href="/" onClick={(e) => { e.preventDefault(); location.reload(); }}>Logout</a>
         <span className="game-date">{formatGameDate(TRADING_DAYS[engine.dayIndex])}</span>

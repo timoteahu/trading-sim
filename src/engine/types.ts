@@ -6,6 +6,8 @@ export interface Deal {
   id: number;
   ts: string;            // game timestamp "MON 1 APR 09:14"
   day: string;           // ISO day
+  tickOfDay: number;     // tick within day at execution
+  gtick: number;         // global tick at execution
   mine: boolean;         // person icon col
   counterparty: string;
   status: 'Filled';
@@ -36,14 +38,50 @@ export interface PhysicalFixing {
   fixedPrice: number;    // outright price incl diff
 }
 
-export interface PhysicalState {
+export interface PhysicalCargo {
+  id: number;
+  dealId: number;
+  grade: 'Forties' | 'Brent' | 'Oseberg' | 'Ekofisk' | 'Troll';
+  side: Side;
+  volumeBbl: number;
+  diff: number;                 // vs basis, e.g. -0.10
+  basisContract: 'BRENT:MAY';
   blDate: string;
+  rule: import('./calendar').PricingRule;
   pricingDays: string[];
-  totalBbl: number;
-  perDayBbl: number;
-  diff: number;          // -0.10 vs basis
-  basisContract: string; // 'BRENT:MAY'
-  fixings: PhysicalFixing[]; // appended as days fix
+  fixings: PhysicalFixing[];
+}
+
+export type ScheduledEvent = { day: number; tick: number } & (
+  | { kind: 'news'; headline: string; body: string; brentJumpPct?: number; attachment?: boolean }
+  | { kind: 'newCargo'; cargo: CargoSpec }
+  | { kind: 'blShift'; cargoId: number; newBl: string }
+  | { kind: 'message'; thread: string; from: string; text: string; expectsReply: boolean }
+  | { kind: 'reminder'; headline: string; body: string }
+);
+
+export interface CargoSpec {
+  grade: PhysicalCargo['grade'];
+  side: Side;
+  volumeBbl: number;
+  diff: number;
+  blDate: string;
+  rule: import('./calendar').PricingRule;
+}
+
+export interface Scenario {
+  seed: number;
+  initialCargo: CargoSpec;
+  events: ScheduledEvent[];
+  driftPerTick: number;   // applied to Brent pct move each tick
+  volScale: number;       // scales tick noise
+}
+
+export interface DayClose {
+  date: string;
+  netOutrightBbl: number;
+  pnl: number;
+  mayClose: number;
 }
 
 export interface NewsItem {
@@ -62,6 +100,8 @@ export interface ChatMessage {
   from: string;
   mine: boolean;
   ts: string;
+  gtick: number;         // global tick when sent
+  expectsReply?: boolean;
   text: string;
 }
 

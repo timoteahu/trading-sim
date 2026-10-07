@@ -37,19 +37,36 @@ export function businessDayOffset(iso: string, n: number): string {
   return cur;
 }
 
-/**
- * "2-1-2 around B/L": 2 business days before B/L, the B/L day, 2 business days after.
- * Fri 5 Apr -> [3,4,5,8,9]; Mon 8 Apr -> [4,5,8,9,10]. Returns sorted ISO dates.
- */
+export type PricingRule =
+  | { kind: 'around'; before: number; after: number }
+  | { kind: 'after'; days: number }
+  | { kind: 'before'; days: number };
+
+/** Business-day pricing days for a rule around/relative to a B/L date. Sorted ISO. */
+export function pricingDaysFor(blDate: string, rule: PricingRule): string[] {
+  let days: string[] = [];
+  if (rule.kind === 'around') {
+    for (let i = rule.before; i >= 1; i--) days.push(businessDayOffset(blDate, -i));
+    days.push(blDate);
+    for (let i = 1; i <= rule.after; i++) days.push(businessDayOffset(blDate, i));
+  } else if (rule.kind === 'after') {
+    for (let i = 1; i <= rule.days; i++) days.push(businessDayOffset(blDate, i));
+  } else {
+    for (let i = rule.days; i >= 1; i--) days.push(businessDayOffset(blDate, -i));
+  }
+  days = [...new Set(days)].sort();
+  return days;
+}
+
+/** "2-1-2 around B/L". Fri 5 Apr -> [3,4,5,8,9]; Mon 8 Apr -> [4,5,8,9,10]. */
 export function pricingWindow(blDate: string): string[] {
-  const days = [
-    businessDayOffset(blDate, -2),
-    businessDayOffset(blDate, -1),
-    blDate,
-    businessDayOffset(blDate, 1),
-    businessDayOffset(blDate, 2),
-  ];
-  return [...new Set(days)].sort();
+  return pricingDaysFor(blDate, { kind: 'around', before: 2, after: 2 });
+}
+
+export function describeRule(rule: PricingRule): string {
+  if (rule.kind === 'around') return `${rule.before}-1-${rule.after} around B/L`;
+  if (rule.kind === 'after') return `${rule.days} days after B/L`;
+  return `${rule.days} days before B/L`;
 }
 
 export const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];

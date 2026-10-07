@@ -6,8 +6,10 @@ import { EXPO_CHANNEL } from './BottomPanel';
 interface Snapshot {
   type: 'snapshot';
   exposure: [string, number][];
-  profile: { date: string; pricingVolumeBbl: number; fixed: boolean; fixedPrice: number | null;
-    cumPricedExposureBbl: number; hedgesBbl: number; hedgeRequiredBbl: number; netOutrightBbl: number }[];
+  profile: { date: string;
+    byCargo: { cargoId: number; grade: string; side: string; pricingBbl: number }[];
+    pricingNetBbl: number; hedgeRequiredLots: number; fixed: boolean;
+    cumPricedExposureBbl: number; hedgesBbl: number; netOutrightBbl: number }[];
   day: number;
 }
 
@@ -38,13 +40,16 @@ export default function ExposurePopup() {
       </table>
       <h4>Hedging Profile</h4>
       <table className="grid">
-        <thead><tr><th>Date</th><th>Pricing</th><th>Hedge Required</th><th>Priced?</th><th>Fixed price</th>
-          <th>Priced to date</th><th>Hedges on</th><th>Net outright</th></tr></thead>
+        <thead><tr><th>Date</th><th>Cargoes pricing</th><th>Net pricing</th><th>Hedge required</th>
+          <th>Priced?</th><th>Priced to date</th><th>Hedges on</th><th>Net outright</th></tr></thead>
         <tbody>
           {snap.profile.map((r) => (
-            <tr key={r.date}><td>{formatShortDate(r.date)}</td><td>{fmtBbl(r.pricingVolumeBbl)}</td>
-              <td>Buy {fmtBbl(r.hedgeRequiredBbl / 1000)} lots</td>
-              <td>{r.fixed ? 'Yes' : 'No'}</td><td>{r.fixedPrice?.toFixed(2) ?? '—'}</td>
+            <tr key={r.date}><td>{formatShortDate(r.date)}</td>
+              <td>{r.byCargo.map((b) => `${b.grade} ${b.side} ${fmtBbl(Math.abs(b.pricingBbl) / 1000)}k`).join(', ') || '—'}</td>
+              <td>{fmtBbl(r.pricingNetBbl)}</td>
+              <td>{Math.abs(r.hedgeRequiredLots) < 0.5 ? '—'
+                : `${r.hedgeRequiredLots > 0 ? 'Buy' : 'Sell'} ${fmtBbl(Math.abs(r.hedgeRequiredLots))} lots`}</td>
+              <td>{r.fixed ? 'Yes' : r.byCargo.length ? 'No' : '—'}</td>
               <td>{fmtBbl(r.cumPricedExposureBbl)}</td><td>{fmtBbl(r.hedgesBbl)}</td>
               <td>{fmtBbl(r.netOutrightBbl)}</td></tr>
           ))}
