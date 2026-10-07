@@ -51,4 +51,24 @@ describe('pnl', () => {
     expect(e.stopLossTick).toBeGreaterThan(0);
     expect(e.news.some((n) => n.headline === 'STOP LOSS BREACHED')).toBe(true);
   });
+
+  it('stop loss compliance: flattening JUN and messaging CR is scored', async () => {
+    const { scoreRun } = await import('../score');
+    const e = quietEngine(FORTIES, 3);
+    e.start();
+    e.tick();
+    e.executeDeal('BRENT', 'JUN', 'B', 80);          // allowed POV
+    for (const [id, m] of e.mids) e.mids.set(id, m * 0.8);
+    e.tick();
+    expect(e.stopLossHit).toBe(true);
+    // flatten JUN POV within 60 ticks and inform Control Room
+    e.executeDeal('BRENT', 'JUN', 'S', 80);
+    e.sendMessage('Control Room', 'Stop loss hit — POV flattened.');
+    const d = scoreRun(e);
+    expect(e.povFlattenTick).toBeGreaterThan(0);
+    expect(d.stopLoss.breached).toBe(true);
+    expect(d.stopLoss.flattenedInTime).toBe(true);
+    expect(d.stopLoss.informedCR).toBe(true);
+    expect(d.stopLoss.score).toBe(1);
+  });
 });

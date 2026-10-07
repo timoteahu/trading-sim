@@ -106,7 +106,7 @@ export function scoreRun(e: SimEngine): Debrief {
   if (e.stopLossHit) {
     flattened = e.povFlattenTick >= 0 && e.povFlattenTick - e.stopLossTick <= 60;
     informed = e.messages.some((m) => m.mine && m.thread === 'Control Room' &&
-      m.gtick > e.stopLossTick && m.gtick <= e.stopLossTick + 60);
+      m.gtick >= e.stopLossTick && m.gtick <= e.stopLossTick + 60);
   }
   const stopScore = !e.stopLossHit ? 1
     : (flattened ? 0.5 : 0) + (informed ? 0.5 : 0);
@@ -115,7 +115,7 @@ export function scoreRun(e: SimEngine): Debrief {
   const expected = e.messages.filter((m) => m.expectsReply);
   const answered = expected.filter((req) =>
     e.messages.some((m) => m.mine && m.thread === req.thread &&
-      m.gtick > req.gtick && m.gtick <= req.gtick + 90));
+      m.gtick >= req.gtick && m.gtick <= req.gtick + 90));
   const commsScore = expected.length ? answered.length / expected.length : 1;
 
   // --- days ---

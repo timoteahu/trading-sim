@@ -19,10 +19,16 @@ export default function ExposurePopup() {
     const ch = new BroadcastChannel(EXPO_CHANNEL);
     const onMsg = (e: MessageEvent) => { if (e.data?.type === 'snapshot') setSnap(e.data); };
     ch.addEventListener('message', onMsg);
-    const close = () => { ch.postMessage({ type: 'closed' }); };
+    // only notify on real unload — NOT on effect cleanup (StrictMode remount
+    // would otherwise close the main side's channel before any snapshot)
+    const close = () => { try { ch.postMessage({ type: 'closed' }); } catch { /* unload */ } };
     window.addEventListener('beforeunload', close);
     window.addEventListener('pagehide', close);
-    return () => { close(); ch.close(); };
+    return () => {
+      window.removeEventListener('beforeunload', close);
+      window.removeEventListener('pagehide', close);
+      ch.close();
+    };
   }, []);
   if (!snap) return <div style={{ padding: 20 }}>Waiting for exposure sheet…</div>;
   const total = snap.exposure.reduce((a, [, v]) => a + v, 0);
