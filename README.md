@@ -11,8 +11,8 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-Enter a username on the login screen (team defaults to the username) and click
-**Enter Simulation**. Use the floating **Control** bar to Start/Pause/Resume and set
+The app loads straight into the simulator as "Trader". Use the floating **Control**
+bar to Start/Pause/Resume and set
 speed (1x, 10x, 60x). Each trading day is 6 real minutes at 1x; 10 days total
 (Mon 1 Apr – Fri 12 Apr, weekdays).
 

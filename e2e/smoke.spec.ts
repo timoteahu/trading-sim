@@ -1,9 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test('login → trade → exposure → messenger', async ({ page }) => {
+test('trade → exposure → messenger', async ({ page }) => {
   await page.goto('/');
-  await page.getByTestId('login-user').fill('junior');
-  await page.getByTestId('login-enter').click();
   await expect(page.getByText('Awaiting Market Open')).toBeVisible();
 
   await page.getByTestId('ctl-start').click();
