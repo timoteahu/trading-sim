@@ -87,7 +87,9 @@ export function scoreRun(e: SimEngine): Debrief {
   const avgMin = allMins.length ? allMins.reduce((a, b) => a + b) / allMins.length : null;
   // score: full marks if avg hedge within last 60 min and no early deals
   let timingScore = 1;
-  if (avgMin != null) timingScore *= Math.max(0, Math.min(1, 1.5 - avgMin / 60));
+  // full marks when the avg hedge lands in the ideal last-60-min window;
+  // linear decay to 0 at 240+ min before close
+  if (avgMin != null) timingScore *= Math.max(0, Math.min(1, avgMin <= 60 ? 1 : 1 - (avgMin - 60) / 180));
   if (earlyCount > 0) timingScore *= Math.max(0, 1 - earlyCount * 0.15);
 
   // --- POV / limits ---

@@ -89,24 +89,25 @@ let finished = false;
 for (let dayIdx = 0; dayIdx < 10 && !finished; dayIdx++) {
   const gd = await gameDateText();
   const iso = toIso(gd);
-  const dayStart = Date.now();
-
-  // wait until near close: est tick >= 325 (wall ~5.4s at 60x) with clock cross-check;
-  // reply to Trading Manager messages as soon as they arrive (90-tick window)
+  // wait until the real engine tick reaches 310 (inside the ideal last-60-min
+  // hedge window); reply to Trading Manager messages as they arrive (90-tick
+  // window). Near the close PAUSE FIRST — a reply costs ~1.5s of UI ops ≈ 90
+  // ticks, which could otherwise blow straight through the day roll.
   for (;;) {
-    const el = (Date.now() - dayStart) / 1000;
-    const estTick = el * 60;
-    const clockMin = await topNewsClockMinutes();
+    const tick = await page.evaluate(() => window.__sim?.tickOfDay ?? -1);
+    const pill = (await page.locator('.status-pill').innerText()).trim();
+    if (pill === 'Finished') { finished = true; break; }
+    if (tick >= 310) {
+      await page.getByRole('button', { name: 'Pause' }).click().catch(() => {});
+      break;
+    }
     while ((await managerNewsCount()) > results.replies) await replyToManager();
-    if (estTick >= 325 || clockMin >= 325 || el > 6.4) break;
-    await page.waitForTimeout(80);
-    const pill = await page.locator('.status-pill').innerText();
-    if (pill.trim() === 'Finished') { finished = true; break; }
+    await page.waitForTimeout(50);
   }
   if (finished) break;
-  // pause so the hedge executes at a deterministic tick (~325-340, inside the
-  // ideal last-60-min window) instead of racing the day roll at 60x
-  await page.getByRole('button', { name: 'Pause' }).click().catch(() => {});
+  // paused at tick ~310-330: answer pending manager mail (game time frozen,
+  // still inside the 90-tick window), then hedge — deterministic execution tick
+  while ((await managerNewsCount()) > results.replies) await replyToManager();
 
   // day 2 (index 1): open 50-lot JUN POV (sell)
   if (dayIdx === 1 && !junPovDone) {

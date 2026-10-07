@@ -18,7 +18,7 @@ function exposureAfterToday(e: SimEngine, today: string): number {
 
 /** Perfect-hedger bot: holds a 50-lot JUN POV throughout; at tick 350 of each day,
  *  trades MAY to flatten today's expected physical exposure. */
-function runBot(seed: number, play: boolean) {
+function runBot(seed: number, play: boolean, hedgeTickOf: (dayIndex: number) => number = () => TICKS_PER_DAY - 10) {
   const e = new SimEngine({ seed });
   e.start();
   if (play) e.executeDeal('BRENT', 'JUN', 'B', 50); // allowed POV — must not break hedging score
@@ -30,7 +30,7 @@ function runBot(seed: number, play: boolean) {
         const answered = e.messages.some((m) => m.mine && m.thread === req.thread && m.gtick > req.gtick);
         if (!answered) e.sendMessage(req.thread, 'Exposure and TCM sent — all hedged.');
       }
-      if (e.tickOfDay === TICKS_PER_DAY - 10) {
+      if (e.tickOfDay === hedgeTickOf(e.dayIndex)) {
         const today = TRADING_DAYS[e.dayIndex];
         const targetBbl = -exposureAfterToday(e, today);
         const curBbl = e.mayFuturesBbl();
@@ -53,6 +53,17 @@ describe('debrief scoring', () => {
     expect(d.hedging.score).toBe(1.0);
     expect(d.comms.answered).toBe(d.comms.expected);
     expect(['A', 'B']).toContain(d.grade);
+  });
+
+  it('timing: hedges anywhere in ticks 300-359 score 1.0', () => {
+    // hedge tick varies 300,312,324,336,348 across days — all inside the
+    // ideal last-60-min window, none early (tick >= 240)
+    const e = runBot(11, true, (d) => 300 + (d % 5) * 12);
+    const d = scoreRun(e);
+    expect(d.timing.earlyCount).toBe(0);
+    expect(d.timing.avgMinutesBeforeClose).not.toBeNull();
+    expect(d.timing.avgMinutesBeforeClose!).toBeLessThanOrEqual(60);
+    expect(d.timing.score).toBe(1.0);
   });
 
   it('do-nothing run: pricing days unhedged, grade D/F', () => {

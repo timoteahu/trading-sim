@@ -76,3 +76,6 @@ export const useUi = create<UiState>((set) => ({
   bump: () => set((s) => ({ version: s.version + 1 })),
   set: (partial) => set(partial),
 }));
+
+// exposed for e2e/tests and console debugging
+(window as unknown as { __sim?: SimEngine }).__sim = useUi.getState().engine;
