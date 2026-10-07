@@ -225,12 +225,25 @@ export class SimEngine {
     return s * c.fixings.reduce((a, f) => a + f.volumeBbl, 0);
   }
 
-  physicalExposureByGrade(): Map<string, number> {
+  /** signed priced-to-date bbl per grade; `dealIds` restricts to cargoes whose deal is listed. */
+  physicalExposureByGrade(dealIds?: Set<number>): Map<string, number> {
     const m = new Map<string, number>();
     for (const c of this.physicals) {
+      if (dealIds && !dealIds.has(c.dealId)) continue;
       m.set(c.grade, (m.get(c.grade) ?? 0) + this.physicalSigned(c));
     }
     return m;
+  }
+
+  /** Priced physical + MAY futures bbl — the hedging metric (JUN POV excluded). */
+  physicalNetBbl(): number {
+    return this.cumPricedSigned() + this.mayFuturesBbl();
+  }
+
+  private cumPricedSigned(): number {
+    let t = 0;
+    for (const c of this.physicals) t += this.physicalSigned(c);
+    return t;
   }
 
   exposure(deals?: Deal[]): Map<string, number> {
@@ -478,14 +491,16 @@ export class SimEngine {
     for (const [id, m] of this.mids) this.prevClose.set(id, m);
 
     const netOut = this.totalExposureBbl();
+    const physNet = this.physicalNetBbl();
     this.dayCloses.push({
-      date: day, netOutrightBbl: netOut,
+      date: day, netOutrightBbl: netOut, physicalNetBbl: physNet,
+      mayFuturesBbl: this.mayFuturesBbl(),
       pnl: this.totalPnl(), mayClose: this.mids.get('BRENT:MAY')!,
     });
-    if (Math.abs(netOut) >= LOT_BBL) {
-      const msg = `COMPLIANCE: unhedged outright exposure of (${Math.abs(Math.round(netOut)).toLocaleString('en-US')}) bbl carried overnight`;
+    if (Math.abs(physNet) >= LOT_BBL) {
+      const msg = `COMPLIANCE: unhedged PHYSICAL outright exposure of (${Math.abs(Math.round(physNet)).toLocaleString('en-US')}) bbl carried overnight`;
       this.toasts.push(msg);
-      this.pushNews(msg, 'You ended a pricing day with outright exposure. This will be marked in your debrief.');
+      this.pushNews(msg, 'You ended a pricing day with unhedged physical exposure. This will be marked in your debrief.');
     }
 
     this.tickOfDay = 0;

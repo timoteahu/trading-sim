@@ -1,9 +1,10 @@
-import { LOT_BBL, instrumentId } from './instruments';
+import { LOT_BBL } from './instruments';
 import { TICKS_PER_DAY, type SimEngine } from './sim';
 
 export interface HedgeDayRow {
   date: string;
-  netOutrightBbl: number;
+  cargoesFixed: string[];   // e.g. "Forties S 140k"
+  physicalNetBbl: number;
   hedged: boolean;
   slippageBbl: number;
 }
@@ -53,15 +54,19 @@ export function scoreRun(e: SimEngine): Debrief {
   const hedgeDays: HedgeDayRow[] = [];
   for (const dc of e.dayCloses) {
     if (!pDates.has(dc.date)) continue;
-    const hedged = Math.abs(dc.netOutrightBbl) < LOT_BBL;
+    const hedged = Math.abs(dc.physicalNetBbl) < LOT_BBL;
+    const cargoesFixed = e.physicals
+      .filter((c) => c.fixings.some((f) => f.date === dc.date))
+      .map((c) => `${c.grade} ${c.side} ${Math.round(
+        c.fixings.find((f) => f.date === dc.date)!.volumeBbl / 1000)}k`);
     hedgeDays.push({
-      date: dc.date, netOutrightBbl: dc.netOutrightBbl, hedged,
-      slippageBbl: hedged ? 0 : Math.abs(dc.netOutrightBbl),
+      date: dc.date, cargoesFixed, physicalNetBbl: dc.physicalNetBbl, hedged,
+      slippageBbl: hedged ? 0 : Math.abs(dc.physicalNetBbl),
     });
   }
   const hedgingScore = hedgeDays.length ? hedgeDays.filter((d) => d.hedged).length / hedgeDays.length : 1;
   const avgAbsOvernight = e.dayCloses.length
-    ? e.dayCloses.reduce((a, d) => a + Math.abs(d.netOutrightBbl), 0) / e.dayCloses.length : 0;
+    ? e.dayCloses.reduce((a, d) => a + Math.abs(d.physicalNetBbl), 0) / e.dayCloses.length : 0;
 
   // --- timing: MAY futures deals on pricing days, minutes before close ---
   const timingRows: TimingRow[] = [];
@@ -86,20 +91,12 @@ export function scoreRun(e: SimEngine): Debrief {
   if (earlyCount > 0) timingScore *= Math.max(0, 1 - earlyCount * 0.15);
 
   // --- POV / limits ---
-  const mayId = instrumentId('BRENT', 'MAY');
   let wrongContractDays = 0;
   for (const dc of e.dayCloses) {
     if (pDates.has(dc.date)) continue; // only flag non-pricing days
     const target = -cumPricedAt(e, dc.date);
-    // reconstruct MAY position at that close? approximation: current deals up to that day
-    const dayIdx = e.dayCloses.indexOf(dc);
-    const mayLots = e.deals
-      .filter((d) => d.kind === 'future' && d.contract === 'MAY' && d.product === 'BRENT')
-      .filter((d) => TRADING_DAY_INDEX(d.day) <= dayIdx)
-      .reduce((a, d) => a + (d.bs === 'B' ? 1 : -1) * d.quantityLots, 0) * LOT_BBL;
-    if (Math.abs(mayLots - target) > LOT_BBL) wrongContractDays++;
+    if (Math.abs(dc.mayFuturesBbl - target) > LOT_BBL) wrongContractDays++;
   }
-  void mayId;
   let povScore = 1;
   if (e.junBreachCount > 0) povScore -= Math.min(0.5, e.junBreachCount * 0.15);
   povScore -= Math.min(0.4, wrongContractDays * 0.1);
@@ -147,5 +144,3 @@ export function scoreRun(e: SimEngine): Debrief {
   };
 }
 
-import { TRADING_DAYS } from './calendar';
-function TRADING_DAY_INDEX(iso: string) { return TRADING_DAYS.indexOf(iso); }

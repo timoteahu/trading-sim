@@ -98,12 +98,26 @@ export function generateScenario(seed: number): Scenario {
     const [dlo, dhi] = GRADE_DIFF[grade];
     const day = int(0, 7);
     const tick = day === 0 ? int(60, 340) : int(10, 350);
-    const bl = businessDayOffset(TRADING_DAYS[day], int(1, 5));
+    const arrival = TRADING_DAYS[day];
+    // re-roll until no pricing day precedes the arrival day
+    let bl = businessDayOffset(arrival, int(1, 5));
+    let rule = pick(RULES) as CargoSpec['rule'];
+    for (let tries = 0; tries < 20; tries++) {
+      const days = pricingDaysFor(bl, rule);
+      if (days.every((d) => d >= arrival)) break;
+      if (tries === 19) { // fallback: always safe
+        bl = businessDayOffset(arrival, 1);
+        rule = { kind: 'after', days: 5 };
+      } else {
+        bl = businessDayOffset(arrival, int(1, 5 + tries));
+        rule = pick(RULES) as CargoSpec['rule'];
+      }
+    }
     const cargoId = i + 1;
     const spec = {
       grade, side, volumeBbl: pick([300, 400, 500, 600, 700, 800]) * 1000,
       diff: Math.round(num(dlo, dhi) * 100) / 100, blDate: bl,
-      rule: pick(RULES) as CargoSpec['rule'],
+      rule,
     };
     cargoById.set(cargoId, { ...spec, arrivalDay: day });
     events.push({ day, tick, kind: 'newCargo', cargo: spec });

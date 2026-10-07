@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateScenario } from '../scenario';
-import { pricingDaysFor } from '../calendar';
+import { pricingDaysFor, TRADING_DAYS } from '../calendar';
 
 describe('scenario generator', () => {
   it('same seed -> identical scenario; different seed -> different', () => {
@@ -44,6 +44,20 @@ describe('scenario generator', () => {
       const shifts = sc.events.filter((e) => e.kind === 'blShift');
       expect(shifts.length).toBeGreaterThanOrEqual(1);
       expect(shifts.length).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('no cargo has a pricing day before its arrival day (seeds 1..50)', () => {
+    for (let s = 1; s <= 50; s++) {
+      const sc = generateScenario(s);
+      for (const e of sc.events) {
+        if (e.kind !== 'newCargo') continue;
+        const arrival = TRADING_DAYS[e.day];
+        for (const d of pricingDaysFor(e.cargo.blDate, e.cargo.rule)) {
+          expect(d, `seed ${s} ${e.cargo.grade} pricing ${d} < arrival ${arrival}`)
+            .toSatisfy((x: string) => x >= arrival);
+        }
+      }
     }
   });
 });

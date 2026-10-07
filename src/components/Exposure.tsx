@@ -13,15 +13,20 @@ function hedgeText(lots: number): string {
 /** Exposure table — reused by the bottom tab and the pop-out window. */
 export function ExposureTable({ engine, deals, hedgingDay, setHedgingDay }:
   { engine: SimEngine; deals?: Deal[]; hedgingDay: number; setHedgingDay?: (n: number) => void }) {
-  const ex = engine.exposure(deals);
-  let total = 0;
-  for (const v of ex.values()) total += v;
+  // futures-only exposure for the product grid rows
+  const futDeals = (deals ?? engine.deals).filter((d) => d.kind !== 'physical');
+  const futEx = engine.exposure(futDeals);
   const byProduct = new Map<string, number>();
-  for (const [id, v] of ex) {
+  for (const [id, v] of futEx) {
     const prod = id.split(':')[0];
     byProduct.set(prod, (byProduct.get(prod) ?? 0) + v);
   }
-  const physByGrade = engine.physicalExposureByGrade();
+  // physical counts only when unfiltered or the physical deal is selected
+  const physDealIds = deals ? new Set(deals.filter((d) => d.kind === 'physical').map((d) => d.id)) : undefined;
+  const physByGrade = engine.physicalExposureByGrade(physDealIds);
+  let total = 0;
+  for (const v of futEx.values()) total += v;
+  for (const v of physByGrade.values()) total += v;
   const profile = engine.hedgingProfile();
   const today = TRADING_DAYS[engine.dayIndex];
 
@@ -37,12 +42,12 @@ export function ExposureTable({ engine, deals, hedgingDay, setHedgingDay }:
             <tr key={p.key}>
               <td>{p.name}</td>
               <td>{fmtBbl(byProduct.get(p.key) ?? 0)}</td>
-              {CONTRACTS.map((c) => <td key={c}>{fmtBbl(ex.get(instrumentId(p.key, c)) ?? 0)}</td>)}
+              {CONTRACTS.map((c) => <td key={c}>{fmtBbl(futEx.get(instrumentId(p.key, c)) ?? 0)}</td>)}
             </tr>
           ))}
           {[...physByGrade.entries()].filter(([, v]) => v !== 0).map(([g, v]) => (
-            <tr key={g}><td>{g} (physical)</td><td>{fmtBbl(v)}</td>
-              <td colSpan={3} style={{ color: '#8a93a0' }}>priced to date</td></tr>
+            <tr key={g}><td>{g}</td><td>{fmtBbl(v)}</td>
+              <td>{fmtBbl(v)}</td><td>0</td><td>0</td></tr>
           ))}
           <tr style={{ fontWeight: 700 }}>
             <td>Total</td><td>{fmtBbl(total)}</td><td colSpan={3}></td>

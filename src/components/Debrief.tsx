@@ -18,14 +18,18 @@ export default function Debrief() {
         {d.worstDay && <span>Worst day: {formatShortDate(d.worstDay.date)} ({fmtUsd(d.worstDay.pnl)})</span>}
       </div>
 
-      <h4>Hedging — {Math.round(d.hedging.score * 100)}% of pricing days hedged; avg overnight outright {fmtBbl(d.hedging.avgAbsOvernightBbl)} bbl</h4>
+      <h4>Hedging — {Math.round(d.hedging.score * 100)}% of pricing days hedged; avg overnight physical outright {fmtBbl(d.hedging.avgAbsOvernightBbl)} bbl</h4>
+      <div style={{ color: '#8a93a0', marginBottom: 4 }}>
+        Hedged = |physical priced to date + MAY futures| &lt; 1 lot at close. JUN POV is excluded.
+      </div>
       <table className="grid">
-        <thead><tr><th>Date</th><th>Net outright at close (bbl)</th><th>Hedged?</th><th>Slippage (bbl)</th></tr></thead>
+        <thead><tr><th>Date</th><th>Cargoes fixed</th><th>Physical net at close (bbl)</th><th>Hedged?</th><th>Slippage (bbl)</th></tr></thead>
         <tbody>
           {d.hedging.days.map((r) => (
             <tr key={r.date}>
-              <td>{formatShortDate(r.date)}</td><td>{fmtBbl(r.netOutrightBbl)}</td>
-              <td style={pass(r.hedged)}>{r.hedged ? 'Yes' : 'No'}</td>
+              <td>{formatShortDate(r.date)}</td><td>{r.cargoesFixed.join(', ')}</td>
+              <td>{fmtBbl(r.physicalNetBbl)}</td>
+              <td style={pass(r.hedged)}>{r.hedged ? '✓' : '✗'}</td>
               <td>{r.slippageBbl ? fmtBbl(r.slippageBbl) : '—'}</td>
             </tr>
           ))}

@@ -16,10 +16,12 @@ function exposureAfterToday(e: SimEngine, today: string): number {
   return t;
 }
 
-/** Perfect-hedger bot: at tick 350 of each day, trade MAY to flatten today's expected exposure. */
+/** Perfect-hedger bot: holds a 50-lot JUN POV throughout; at tick 350 of each day,
+ *  trades MAY to flatten today's expected physical exposure. */
 function runBot(seed: number, play: boolean) {
   const e = new SimEngine({ seed });
   e.start();
+  if (play) e.executeDeal('BRENT', 'JUN', 'B', 50); // allowed POV — must not break hedging score
   let guard = 0;
   while (e.status !== 'finished' && guard++ < 50_000) {
     if (play && e.status === 'open') {

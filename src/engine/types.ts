@@ -79,7 +79,9 @@ export interface Scenario {
 
 export interface DayClose {
   date: string;
-  netOutrightBbl: number;
+  netOutrightBbl: number;    // total book outright (incl. JUN POV) — display only
+  physicalNetBbl: number;    // priced physical + MAY futures — hedging metric
+  mayFuturesBbl: number;
   pnl: number;
   mayClose: number;
 }
