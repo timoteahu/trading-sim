@@ -20,5 +20,16 @@ await page.getByTestId('ticket-submit').click();
 await page.waitForTimeout(2000);
 
 await page.screenshot({ path: 'e2e/screenshots/main.png', fullPage: false });
-await browser.close();
 console.log('saved e2e/screenshots/main.png');
+
+// --- exposure.png: fast-forward past Thu 4 Apr close with the 140-lot MAY hedge on ---
+await page.getByTestId('speed-60').click();
+await page.waitForFunction(
+  () => document.body.innerText.includes('FRI 5 APR'),
+  { timeout: 120_000 },
+);
+await page.getByRole('button', { name: 'Exposure', exact: true }).click();
+await page.waitForTimeout(500);
+await page.screenshot({ path: 'e2e/screenshots/exposure.png', fullPage: false });
+console.log('saved e2e/screenshots/exposure.png');
+await browser.close();

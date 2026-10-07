@@ -20,7 +20,12 @@ describe('pnl', () => {
     for (let t = 0; t < TICKS_PER_DAY * 4 + 20; t++) e.tick(); // first fix Thu 4 Apr
     const f = e.physical.fixings[0];
     const cur = e.mid('BRENT:MAY');
-    expect(e.physicalPnl()).toBeCloseTo((f.fixedPrice - cur) * 140_000, 4);
+    // P_D = fixing-day MAY close = fixedPrice - diff; MTM vs current outright mid
+    expect(e.physicalPnl()).toBeCloseTo(
+      (f.fixedPrice - (cur + e.physical.diff)) * 140_000, 4);
+    // equivalently (close_D - cur) * vol — the -0.10 diff cancels out
+    const closeD = f.fixedPrice - e.physical.diff;
+    expect(e.physicalPnl()).toBeCloseTo((closeD - cur) * 140_000, 4);
   });
 
   it('stop loss triggers at <= -$1,000,000', () => {

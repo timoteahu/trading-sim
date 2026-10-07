@@ -43,4 +43,19 @@ describe('clock & day roll', () => {
     expect(phys.priceFrm).toBe('4 APR');
     expect(phys.priceTo).toBe('10 APR');
   });
+
+  it('B/L shift drops fixings that leave the window -> earlier hedge becomes over-hedged', () => {
+    const e = new SimEngine({ seed: 9 });
+    e.start();
+    // artificially fix Wed 3 Apr (as if it were still a pricing day) and hedge it
+    e.physical.fixings.push({ date: '2024-04-03', volumeBbl: 140_000, fixedPrice: 85 });
+    e.executeDeal('BRENT', 'MAY', 'B', 140);
+    expect(e.exposure().get('BRENT:MAY')).toBe(0);
+    // run until the shift fires (day index 2, tick 30)
+    for (let t = 0; t < TICKS_PER_DAY * 2 + 40; t++) e.tick();
+    expect(e.physical.blDate).toBe('2024-04-08');
+    expect(e.physical.fixings).toHaveLength(0); // 3 Apr no longer a pricing day
+    // hedge now over-hedged: +140,000 outright
+    expect(e.exposure().get('BRENT:MAY')).toBe(140_000);
+  });
 });

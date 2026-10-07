@@ -1,8 +1,7 @@
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 
 export default function ControlBar() {
-  const engine = useUi((s) => s.engine)!;
-  useUi((s) => s.version);
+  const engine = useEngine();
   const { controlOpen, set, bump } = useUi();
   if (!controlOpen)
     return <div className="control-bar"><div className="cb-head" onClick={() => set({ controlOpen: true })}>Control ▸</div></div>;

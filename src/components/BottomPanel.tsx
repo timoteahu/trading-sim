@@ -2,14 +2,13 @@ import Deals from './Deals';
 import ExposureTab from './Exposure';
 import Charts from './Charts';
 import Messenger from './Messenger';
-import { useUi, type BottomTab } from '../store';
+import { useUi, useEngine, type BottomTab } from '../store';
 
 export const EXPO_CHANNEL = 'sms-exposure';
 
 export default function BottomPanel() {
-  const engine = useUi((s) => s.engine)!;
+  const engine = useEngine();
   const { bottomTab, exposurePopped, set } = useUi();
-  useUi((s) => s.version);
 
   const tabs: BottomTab[] = (['Deals', 'Exposure', 'Charts', 'Messenger'] as BottomTab[])
     .filter((t) => !exposurePopped || (t !== 'Deals' && t !== 'Exposure'));

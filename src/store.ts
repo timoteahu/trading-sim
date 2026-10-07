@@ -38,6 +38,12 @@ interface UiState {
   set(partial: Partial<UiState>): void;
 }
 
+/** Subscribe to engine ticks and return the engine. Use in every component reading engine state. */
+export function useEngine(): SimEngine {
+  useUi((s) => s.version);
+  return useUi((s) => s.engine)!;
+}
+
 export const useUi = create<UiState>((set) => ({
   engine: null,
   version: 0,

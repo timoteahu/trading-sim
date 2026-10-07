@@ -1,7 +1,7 @@
 import { TRADING_DAYS, formatGameDate } from '../engine/calendar';
 import { TICKS_PER_DAY } from '../engine/sim';
 import { fmtBbl, fmtUsd } from '../engine/format';
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 
 const STATUS_LABEL: Record<string, string> = {
   awaiting: 'Awaiting Market Open', open: 'Market Open', paused: 'Paused',
@@ -28,8 +28,7 @@ export function DualGauge({ outer, inner }: { outer: number; inner: number }) {
 }
 
 export default function TopBar() {
-  const engine = useUi((s) => s.engine)!;
-  useUi((s) => s.version);
+  const engine = useEngine();
   const pnl = engine.totalPnl();
   const exposure = engine.totalExposureBbl();
   const totalTicks = TRADING_DAYS.length * TICKS_PER_DAY;

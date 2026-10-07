@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { instrumentId } from '../engine/instruments';
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 
 function ema(series: number[], period: number): number[] {
   const k = 2 / (period + 1);
@@ -19,8 +19,7 @@ function path(series: number[], min: number, max: number, w: number, h: number):
 }
 
 export default function Charts() {
-  const engine = useUi((s) => s.engine)!;
-  useUi((s) => s.version);
+  const engine = useEngine();
   const { chartA, chartB, emaFast, emaSlow, set } = useUi();
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState(0); // fraction of hidden tail scrolled left

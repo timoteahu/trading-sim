@@ -242,11 +242,14 @@ export class SimEngine {
         const dir = d.bs === 'B' ? 1 : -1;
         add(id, dir * d.quantityLots * LOT_BBL);
       }
+      // physical counts only if the physical deal itself is selected
+      if (deals.some((d) => d.kind === 'physical')) {
+        for (const f of this.physical.fixings) add(this.physical.basisContract, -f.volumeBbl);
+      }
     } else {
       for (const [id, pos] of this.positions) add(id, pos.qty * LOT_BBL);
+      for (const f of this.physical.fixings) add(this.physical.basisContract, -f.volumeBbl);
     }
-    // physical: each fixed pricing day -> short outright in basis contract
-    for (const f of this.physical.fixings) add(this.physical.basisContract, -f.volumeBbl);
     return out;
   }
 
@@ -271,11 +274,12 @@ export class SimEngine {
       return {
         date: d,
         pricingVolumeBbl: pricing,
+        hedgeRequiredBbl: -pricing,   // BUY the day's volume at that day's close
         fixed: !!fixing,
         fixedPrice: fixing?.fixedPrice ?? null,
         cumPricedExposureBbl: cum,
         hedgesBbl: hedgeBbl,
-        hedgeRequiredBbl: fixing ? -(cum + hedgeBbl) : 0,
+        netOutrightBbl: cum + hedgeBbl,
       };
     });
   }
@@ -289,7 +293,9 @@ export class SimEngine {
     return total;
   }
   physicalPnl(): number {
-    const cur = this.mid(this.physical.basisContract);
+    // MTM: (P_D - currentMayMid) * vol, where P_D is the outright-equivalent
+    // of the fixing (fixedPrice stores close+diff, so add back the diff to cur).
+    const cur = this.mid(this.physical.basisContract) + this.physical.diff;
     let t = 0;
     for (const f of this.physical.fixings) t += (f.fixedPrice - cur) * f.volumeBbl;
     return t;
@@ -324,6 +330,9 @@ export class SimEngine {
     if (spec.mutation === 'BL_SHIFT') {
       this.physical.blDate = SHIFTED_BL;
       this.physical.pricingDays = pricingWindow(SHIFTED_BL);
+      // drop fixings that are no longer pricing days (over-hedged volume)
+      this.physical.fixings = this.physical.fixings.filter((f) =>
+        this.physical.pricingDays.includes(f.date));
       this.refreshPhysicalDealWindow();
     }
     if (spec.message) {

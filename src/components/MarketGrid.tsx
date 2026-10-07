@@ -1,13 +1,13 @@
 import { useRef } from 'react';
 import { ALL_PRODUCTS, CONTRACTS, instrumentId, type ProductDef } from '../engine/instruments';
 import { fmtPrice } from '../engine/format';
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 import NewsPanel from './NewsPanel';
 
 const GLYPH = { up: '▲', down: '▼', flat: '—' } as const;
 
 function ProductBlock({ def }: { def: ProductDef }) {
-  const engine = useUi((s) => s.engine)!;
+  const engine = useEngine();
   const set = useUi((s) => s.set);
   const chartSelectArmed = useUi((s) => s.chartSelectArmed);
   const chartA = useUi((s) => s.chartA);
@@ -49,8 +49,8 @@ function ProductBlock({ def }: { def: ProductDef }) {
                   onClick={(e) => { e.stopPropagation(); set({ ticket: { side: 'B', product: def.key, contract: c } }); }}>
                   {fmtPrice(q.ask, decimals)}
                 </td>
-                <td className={flashed ? 'cell-flash' : ''}>{fmtPrice(q.last, decimals)}</td>
-                <td className={`chg-${chg.glyph}`}>{GLYPH[chg.glyph]} {fmtPrice(Math.abs(chg.diff), decimals)}</td>
+                <td className={flashed ? 'cell-flash' : ''} data-testid={`last-${def.key}-${c}`}>{fmtPrice(q.last, decimals)}</td>
+                <td className={`chg-${chg.glyph}`} data-testid={`chg-${def.key}-${c}`}>{GLYPH[chg.glyph]} {fmtPrice(Math.abs(chg.diff), decimals)}</td>
               </tr>
             );
           })}

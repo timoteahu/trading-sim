@@ -10,6 +10,14 @@ test('login → trade → exposure → messenger', async ({ page }) => {
   await expect(page.getByText('Market Open')).toBeVisible();
   await page.getByTestId('speed-60').click();
 
+  // grid prices update live
+  await expect
+    .poll(async () => page.getByTestId('last-BRENT-MAY').innerText(), { timeout: 10_000 })
+    .not.toBe('85.00');
+  await expect
+    .poll(async () => page.getByTestId('chg-BRENT-MAY').innerText())
+    .not.toBe('— 0.00');
+
   // Buy 140 lots Brent MAY via the Ask cell
   await page.getByTestId('ask-BRENT-MAY').click();
   await expect(page.getByText('BUY')).toBeVisible();

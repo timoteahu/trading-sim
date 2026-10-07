@@ -1,8 +1,7 @@
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 
 export default function Messenger() {
-  const engine = useUi((s) => s.engine)!;
-  useUi((s) => s.version);
+  const engine = useEngine();
   const { activeThread, msgInputs, set, bump } = useUi();
   const threads = ['Control Room', 'Group',
     ...new Set(engine.messages.map((m) => m.thread))].filter((v, i, a) => a.indexOf(v) === i);

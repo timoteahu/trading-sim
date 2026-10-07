@@ -1,8 +1,7 @@
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 
 export default function NewsPanel() {
-  const engine = useUi((s) => s.engine)!;
-  useUi((s) => s.version);
+  const engine = useEngine();
   const { expandedNews, bigFont, set } = useUi();
   return (
     <div className="news-panel">

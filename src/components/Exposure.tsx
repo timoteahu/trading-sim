@@ -3,7 +3,7 @@ import { TRADING_DAYS, formatShortDate } from '../engine/calendar';
 import { fmtBbl } from '../engine/format';
 import type { Deal } from '../engine/types';
 import type { SimEngine } from '../engine/sim';
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 
 /** Exposure table — reused by the bottom tab and the pop-out window. */
 export function ExposureTable({ engine, deals, hedgingDay, setHedgingDay }:
@@ -47,21 +47,25 @@ export function ExposureTable({ engine, deals, hedgingDay, setHedgingDay }:
       </div>
       <table className="grid">
         <thead>
-          <tr><th>Date</th><th>Physical pricing (bbl)</th><th>Fixed?</th><th>Fixed price</th>
-            <th>Cum. priced exposure</th><th>Hedges placed</th><th>Hedge required</th></tr>
+          <tr><th>Date</th><th>Pricing (bbl)</th><th>Hedge Required (at close)</th><th>Priced?</th>
+            <th>Fixed price</th><th>Priced to date</th><th>Hedges on</th><th>Net outright</th></tr>
         </thead>
         <tbody>
-          {profile.map((r, i) => (
-            <tr key={r.date} style={i === hedgingDay ? { background: '#1c2f4d' } : undefined}>
-              <td>{formatShortDate(r.date)}</td>
-              <td>{fmtBbl(r.pricingVolumeBbl)}</td>
-              <td>{r.fixed ? 'Yes' : 'No'}</td>
-              <td>{r.fixedPrice?.toFixed(2) ?? '—'}</td>
-              <td>{fmtBbl(r.cumPricedExposureBbl)}</td>
-              <td>{fmtBbl(r.hedgesBbl)}</td>
-              <td>{fmtBbl(r.hedgeRequiredBbl)}</td>
-            </tr>
-          ))}
+          {profile.map((r, i) => {
+            const isToday = r.date === TRADING_DAYS[engine.dayIndex];
+            return (
+              <tr key={r.date} style={isToday ? { background: '#1c2f4d' } : i === hedgingDay ? { background: '#181f2b' } : undefined}>
+                <td>{formatShortDate(r.date)}{isToday ? ' •' : ''}</td>
+                <td>{fmtBbl(r.pricingVolumeBbl)}</td>
+                <td>Buy {fmtBbl(r.hedgeRequiredBbl / 1000)} lots</td>
+                <td>{r.fixed ? 'Yes' : 'No'}</td>
+                <td>{r.fixedPrice?.toFixed(2) ?? '—'}</td>
+                <td>{fmtBbl(r.cumPricedExposureBbl)}</td>
+                <td>{fmtBbl(r.hedgesBbl)}</td>
+                <td>{fmtBbl(r.netOutrightBbl)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <div style={{ color: '#8a93a0', marginTop: 4 }}>
@@ -72,8 +76,7 @@ export function ExposureTable({ engine, deals, hedgingDay, setHedgingDay }:
 }
 
 export default function ExposureTab() {
-  const engine = useUi((s) => s.engine)!;
-  useUi((s) => s.version);
+  const engine = useEngine();
   const { showSelectedOnly, hedgingDay, set } = useUi();
   const deals = showSelectedOnly ? engine.deals.filter((d) => d.selected || d.kind === 'physical') : undefined;
   return <ExposureTable engine={engine} deals={deals} hedgingDay={hedgingDay}

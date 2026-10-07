@@ -2,7 +2,7 @@ import { fmtBbl, fmtPrice } from '../engine/format';
 import { ALL_PRODUCTS, instrumentId, type Contract } from '../engine/instruments';
 import type { Deal } from '../engine/types';
 import type { SimEngine } from '../engine/sim';
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 
 function dealPnl(engine: SimEngine, d: Deal): number | null {
   if (d.kind === 'physical' || d.priceDiff == null) return null;
@@ -13,8 +13,7 @@ function dealPnl(engine: SimEngine, d: Deal): number | null {
 }
 
 export default function Deals() {
-  const engine = useUi((s) => s.engine)!;
-  useUi((s) => s.version);
+  const engine = useEngine();
   const s = useUi();
   const set = s.set;
 

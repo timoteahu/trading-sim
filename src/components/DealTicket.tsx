@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { LOT_BBL, productByKey } from '../engine/instruments';
 import { fmtPrice, fmtBbl } from '../engine/format';
-import { useUi } from '../store';
+import { useUi, useEngine } from '../store';
 
 export default function DealTicket() {
-  const engine = useUi((s) => s.engine)!;
+  const engine = useEngine();
   const ticket = useUi((s) => s.ticket);
   const set = useUi((s) => s.set);
   const bump = useUi((s) => s.bump);
   const [lots, setLots] = useState('140');
-  useUi((s) => s.version); // live price updates
   if (!ticket) return null;
 
   const q = engine.quote(ticket.product, ticket.contract);

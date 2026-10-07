@@ -7,7 +7,7 @@ interface Snapshot {
   type: 'snapshot';
   exposure: [string, number][];
   profile: { date: string; pricingVolumeBbl: number; fixed: boolean; fixedPrice: number | null;
-    cumPricedExposureBbl: number; hedgesBbl: number; hedgeRequiredBbl: number }[];
+    cumPricedExposureBbl: number; hedgesBbl: number; hedgeRequiredBbl: number; netOutrightBbl: number }[];
   day: number;
 }
 
@@ -38,14 +38,15 @@ export default function ExposurePopup() {
       </table>
       <h4>Hedging Profile</h4>
       <table className="grid">
-        <thead><tr><th>Date</th><th>Physical pricing</th><th>Fixed?</th><th>Fixed price</th>
-          <th>Cum. exposure</th><th>Hedges</th><th>Hedge required</th></tr></thead>
+        <thead><tr><th>Date</th><th>Pricing</th><th>Hedge Required</th><th>Priced?</th><th>Fixed price</th>
+          <th>Priced to date</th><th>Hedges on</th><th>Net outright</th></tr></thead>
         <tbody>
           {snap.profile.map((r) => (
             <tr key={r.date}><td>{formatShortDate(r.date)}</td><td>{fmtBbl(r.pricingVolumeBbl)}</td>
+              <td>Buy {fmtBbl(r.hedgeRequiredBbl / 1000)} lots</td>
               <td>{r.fixed ? 'Yes' : 'No'}</td><td>{r.fixedPrice?.toFixed(2) ?? '—'}</td>
               <td>{fmtBbl(r.cumPricedExposureBbl)}</td><td>{fmtBbl(r.hedgesBbl)}</td>
-              <td>{fmtBbl(r.hedgeRequiredBbl)}</td></tr>
+              <td>{fmtBbl(r.netOutrightBbl)}</td></tr>
           ))}
         </tbody>
       </table>
