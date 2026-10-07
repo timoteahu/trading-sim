@@ -1,0 +1,154 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: #0d0f12;
+  color: #e8e8e8;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+}
+button { font: inherit; cursor: pointer; }
+input, select { font: inherit; }
+
+/* ---------- login ---------- */
+.login-wrap { display: flex; align-items: center; justify-content: center; height: 100%; }
+.login-box { background: #181b20; border: 1px solid #2a2e35; padding: 32px 40px; border-radius: 4px; width: 340px; }
+.login-box h1 { font-size: 18px; margin: 0 0 4px; }
+.login-box h2 { font-size: 12px; font-weight: normal; color: #8a93a0; margin: 0 0 20px; }
+.login-box label { display: block; margin-bottom: 12px; color: #aab2bd; }
+.login-box input { display: block; width: 100%; margin-top: 4px; background: #0d0f12; border: 1px solid #333a44; color: #fff; padding: 7px 9px; border-radius: 3px; }
+.btn-primary { background: #1f6feb; color: #fff; border: none; padding: 8px 16px; border-radius: 3px; width: 100%; }
+
+/* ---------- layout ---------- */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar { display: flex; align-items: stretch; gap: 8px; padding: 6px 8px; background: #13161a; border-bottom: 1px solid #262b33; }
+.summary-box { display: flex; border: 1px solid #2a2e35; border-radius: 3px; overflow: hidden; }
+.summary-col { padding: 4px 14px; min-width: 110px; }
+.summary-col .lbl { color: #8a93a0; font-size: 10px; text-transform: uppercase; }
+.summary-col .val { font-size: 16px; font-weight: 600; margin-top: 2px; }
+.summary-col .val.hl { background: #2a2e35; padding: 1px 8px; border-radius: 3px; display: inline-block; }
+.summary-col .val.neg { color: #ff6b6b; }
+.top-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.status-pill { padding: 4px 14px; border-radius: 12px; font-weight: 600; font-size: 11px; }
+.status-pill.paused, .status-pill.awaiting { background: #b79b2e; color: #111; }
+.status-pill.open { background: #2e9e57; color: #fff; }
+.status-pill.finished { background: #556; color: #fff; }
+.status-pill.disconnected { background: #c0392b; color: #fff; }
+.logout-link { color: #4f9cf0; text-decoration: none; }
+.game-date { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+.gauge { display: flex; align-items: center; }
+
+/* ---------- instrument tabs ---------- */
+.inst-tabs { display: flex; gap: 2px; padding: 4px 8px 0; background: #13161a; }
+.inst-tab { padding: 6px 18px; background: #1b1f25; border: 1px solid #262b33; border-bottom: none; color: #aab2bd; border-radius: 4px 4px 0 0; }
+.inst-tab.active { background: #232830; color: #fff; font-weight: 600; }
+.empty-note { color: #8a93a0; padding: 20px; text-align: center; }
+
+/* ---------- market grid ---------- */
+.market { display: flex; gap: 6px; padding: 6px 8px; flex: 1; min-height: 0; }
+.grid-area { flex: 3; display: flex; gap: 6px; min-height: 0; }
+.grid-col { flex: 1; display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.product-block { border: 1px solid #262b33; border-radius: 3px; background: #16191e; }
+.product-head { padding: 4px 8px; font-weight: 700; font-size: 11px; background: #1e232b; letter-spacing: 0.5px; }
+.product-block table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.product-block th { color: #8a93a0; font-weight: 600; text-align: right; padding: 2px 6px; font-size: 10px; }
+.product-block th:first-child, .product-block td:first-child { text-align: left; }
+.product-block td { padding: 3px 6px; text-align: right; border-top: 1px solid #20242b; }
+.cell-bid, .cell-ask { cursor: pointer; }
+.cell-bid:hover { background: rgba(192, 57, 43, .25); }
+.cell-ask:hover { background: rgba(31, 111, 235, .3); }
+.cell-flash { animation: flash .5s; }
+@keyframes flash { 0% { background: #3a4a63; } 100% { background: transparent; } }
+.chg-up { color: #3ecf6e; }
+.chg-down { color: #ff6b6b; }
+.chg-flat { color: #8a93a0; }
+.row-selected-inst { outline: 1px solid #1f6feb; }
+
+/* ---------- news ---------- */
+.news-panel { flex: 1; min-width: 240px; border: 1px solid #262b33; border-radius: 3px; background: #16191e; display: flex; flex-direction: column; min-height: 0; }
+.news-head { display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; background: #1e232b; font-weight: 700; font-size: 11px; }
+.news-head button { background: none; border: 1px solid #3a4149; color: #aab2bd; border-radius: 3px; padding: 1px 7px; }
+.news-list { overflow: auto; flex: 1; }
+.news-item { padding: 5px 8px; border-top: 1px solid #20242b; cursor: pointer; }
+.news-item .row { display: flex; justify-content: space-between; gap: 8px; }
+.news-item .headline.unread { font-weight: 700; }
+.news-item .ts { color: #8a93a0; white-space: nowrap; font-size: 10px; }
+.news-item .body { margin-top: 4px; color: #c3cad2; white-space: pre-wrap; }
+.news-item.big { font-size: 14px; }
+
+/* ---------- bottom panel ---------- */
+.bottom { border-top: 1px solid #262b33; background: #13161a; height: 240px; display: flex; flex-direction: column; }
+.bottom-tabs { display: flex; align-items: center; gap: 2px; padding: 3px 8px 0; }
+.bottom-tabs .spacer { flex: 1; }
+.btab { padding: 5px 16px; background: #1b1f25; border: 1px solid #262b33; border-bottom: none; color: #aab2bd; border-radius: 4px 4px 0 0; }
+.btab.active { background: #232830; color: #fff; font-weight: 600; }
+.bottom-body { flex: 1; overflow: auto; background: #16191e; border-top: 1px solid #262b33; }
+
+/* deals toolbar + grid */
+.deals-toolbar { display: flex; gap: 6px; align-items: center; padding: 5px 8px; flex-wrap: wrap; }
+.deals-toolbar button, .deals-toolbar select, .deals-toolbar input {
+  background: #1e232b; border: 1px solid #333a44; color: #d8dde3; padding: 3px 9px; border-radius: 3px;
+}
+.deals-toolbar button:disabled { opacity: 0.4; cursor: default; }
+.deals-toolbar button.toggled { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+table.grid { width: 100%; border-collapse: collapse; font-size: 11px; }
+table.grid th { position: sticky; top: 0; background: #1e232b; color: #8a93a0; text-align: left; padding: 3px 6px; font-size: 10px; z-index: 1; }
+table.grid td { padding: 3px 6px; border-top: 1px solid #20242b; white-space: nowrap; }
+table.grid tr.sel td { background: #1c2f4d; }
+.bs-B { color: #3ecf6e; font-weight: 700; }
+.bs-S { color: #ff6b6b; font-weight: 700; }
+.pager { display: flex; gap: 8px; align-items: center; padding: 4px 8px; color: #8a93a0; }
+.pager button { background: none; border: none; color: #d8dde3; }
+
+/* exposure */
+.exposure { padding: 8px; }
+.exposure h4 { margin: 8px 0 4px; font-size: 11px; color: #aab2bd; text-transform: uppercase; }
+.hedging-nav { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.hedging-nav button { background: #1e232b; border: 1px solid #333a44; color: #d8dde3; border-radius: 3px; padding: 2px 8px; }
+
+/* stop loss / toast */
+.stoploss { background: #7a1f1f; color: #fff; padding: 6px 12px; font-weight: 700; text-align: center; }
+.toasts { position: fixed; right: 12px; top: 60px; z-index: 50; display: flex; flex-direction: column; gap: 6px; }
+.toast { background: #5a4a12; border: 1px solid #b79b2e; color: #ffe9a8; padding: 8px 12px; border-radius: 4px; }
+
+/* ---------- deal ticket ---------- */
+.ticket-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 40; }
+.ticket { width: 320px; border-radius: 4px; overflow: hidden; border: 1px solid #333a44; }
+.ticket.buy .ticket-head { background: #14406e; }
+.ticket.sell .ticket-head { background: #6e1f1f; }
+.ticket-head { padding: 10px 14px; font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+.ticket-body { background: #16191e; padding: 12px 14px; }
+.ticket-body .row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.ticket-body input { width: 120px; background: #0d0f12; border: 1px solid #333a44; color: #fff; padding: 5px 8px; border-radius: 3px; text-align: right; }
+.ticket .recap { color: #aab2bd; margin: 10px 0; font-size: 11px; }
+.ticket .actions { display: flex; gap: 8px; justify-content: flex-end; }
+.ticket .btn-submit { background: #2e9e57; border: none; color: #fff; padding: 6px 18px; border-radius: 3px; }
+.ticket.sell .btn-submit { background: #c0392b; }
+.ticket .btn-cancel { background: #2a2e35; border: none; color: #d8dde3; padding: 6px 14px; border-radius: 3px; }
+
+/* ---------- messenger ---------- */
+.messenger { display: flex; height: 100%; }
+.threads { width: 180px; border-right: 1px solid #262b33; overflow: auto; }
+.thread { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #20242b; }
+.thread.active { background: #232830; font-weight: 600; }
+.chat { flex: 1; display: flex; flex-direction: column; }
+.chat-log { flex: 1; overflow: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.bubble { max-width: 70%; padding: 6px 10px; border-radius: 10px; background: #232830; }
+.bubble.mine { align-self: flex-end; background: #14406e; }
+.bubble .meta { font-size: 9px; color: #8a93a0; margin-top: 2px; }
+.chat-input { display: flex; gap: 6px; padding: 6px; border-top: 1px solid #262b33; }
+.chat-input input { flex: 1; background: #0d0f12; border: 1px solid #333a44; color: #fff; padding: 6px 10px; border-radius: 14px; }
+.chat-input button { background: #1f6feb; color: #fff; border: none; border-radius: 14px; padding: 6px 16px; }
+
+/* ---------- control bar ---------- */
+.control-bar { position: fixed; right: 10px; bottom: 250px; z-index: 60; background: #1e232b; border: 1px solid #3a4149; border-radius: 4px; }
+.control-bar .cb-head { padding: 4px 10px; font-weight: 700; cursor: pointer; color: #aab2bd; font-size: 10px; }
+.control-bar .cb-body { display: flex; gap: 4px; padding: 6px 10px; align-items: center; }
+.control-bar button { background: #2a2e35; border: 1px solid #3a4149; color: #d8dde3; padding: 3px 9px; border-radius: 3px; }
+.control-bar button.on { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+/* charts */
+.chart-wrap { padding: 8px; height: 100%; display: flex; flex-direction: column; }
+.chart-wrap .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.chart-wrap .toolbar button { background: #1e232b; border: 1px solid #333a44; color: #d8dde3; padding: 3px 9px; border-radius: 3px; }
+.chart-wrap .toolbar button.on { background: #1f6feb; color: #fff; }
+.chart-wrap svg { flex: 1; background: #0d0f12; border: 1px solid #20242b; }
